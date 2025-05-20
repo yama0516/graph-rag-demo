@@ -1,0 +1,8 @@
+langchain==0.3.25
+langchain-community
+langchain-experimental
+langchain-openai
+langchain-anthropic
+neo4j
+python-dotenv
+streamlit
