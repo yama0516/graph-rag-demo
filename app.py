@@ -69,7 +69,7 @@ if query:
         placeholder = st.empty()
         for chunk in response:
             # たとえば OpenAI のチャンクなら .choices[0].delta.content でテキスト取得
-            delta = chunk.choices[0].delta.content or ""
+            delta = chunk
             assistant_msg += delta
             placeholder.write(assistant_msg)
 
