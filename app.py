@@ -2,26 +2,82 @@ import streamlit as st
 from rag_logic import run_graph_rag  # ロジックをインポート
 import os
 from dotenv import load_dotenv
+import streamlit_authenticator as stauth
 
 load_dotenv()
 
 st.set_page_config(page_title="Graph RAG Demo")
-st.title("Graph RAG デモ")
+st.title("移転価格Graph RAG")
 
-# パスワード認証
-password = st.text_input("パスワードを入力してください", type="password")
-if password != os.getenv("APP_PASSWORD"):
-    st.warning("正しいパスワードを入力してください")
-    st.stop()
+hashed_pw = stauth.Hasher([os.getenv("APP_PASSWORD")]).generate()[0]
 
-# 質問フォーム
-query = st.text_input("質問を入力してください")
+config = {
+    "credentials": {
+        "usernames": {
+            os.getenv("APP_USER"): {
+                "name" : "time",
+                "password": hashed_pw,
+                # "roles": ["admin"],
+            }
+        }
+    },
+    "cookie": {
+        "name":  "app_auth",
+        "key":   os.getenv("COOKIE_KEY"),          # ランダム文字列を Secrets で注入
+        "expiry_days": int(3),
+    },
+}
 
-if st.button("実行") and query:
-    with st.spinner("回答生成中..."):
-        try:
-            result = run_graph_rag(query)
-            st.success("✅ 回答:")
-            st.write(result)
-        except Exception as e:
-            st.error(f"エラーが発生しました: {e}")
+authenticator = stauth.Authenticate(config["credentials"],
+                                    cookie_name=config["cookie"]["name"],
+                                    cookie_key=config["cookie"]["key"],
+                                    cookie_expiry_days=config["cookie"]["expiry_days"])
+
+
+# ログインフォームの表示（ここで入力欄が出る）
+name, auth_status, username = authenticator.login(location='main')
+
+# 認証結果に応じてアプリの表示を切り替える
+if auth_status:
+    authenticator.logout(location='sidebar')
+    st.write(f"ようこそ、ユーザーさん！")
+    st.success("ログインに成功しました。")
+    USER_NAME = "user"
+    ASSISTANT_NAME = "AI"
+
+# チャットログを保存したセッション情報を初期化
+if "chat_log" not in st.session_state:
+    st.session_state.chat_log = []
+
+
+query = st.chat_input("ここにメッセージを入力")
+if query:
+    # 以前のチャットログを表示
+    for chat in st.session_state.chat_log:
+        with st.chat_message(chat["name"]):
+            st.write(chat["msg"])
+
+    # 最新のメッセージを表示
+    with st.chat_message(USER_NAME):
+        st.write(query)
+
+    # アシスタントのメッセージを表示
+    response = run_graph_rag(query)
+    with st.chat_message(ASSISTANT_NAME):
+        assistant_msg = ""
+        assistant_response_area = st.empty()
+        for chunk in response:
+            if chunk is not None:
+                break
+            # 回答を逐次表示
+            assistant_msg += chunk
+            assistant_response_area.write(assistant_msg)
+
+    # セッションにチャットログを追加
+    st.session_state.chat_log.append({"name": USER_NAME, "msg": query})
+    st.session_state.chat_log.append({"name": ASSISTANT_NAME, "msg": assistant_msg})
+    # ← ここに本体のアプリ処理を書く
+elif auth_status is False:
+    st.error("ユーザー名またはパスワードが間違っています。")
+elif auth_status is None:
+    st.info("ユーザー名とパスワードを入力してください。")

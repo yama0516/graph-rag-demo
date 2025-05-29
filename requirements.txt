@@ -108,3 +108,4 @@ zstandard==0.23.0
 azure-identity==1.16.0
 azure-search-documents>=11.6.0b4
 azure-core==1.30.0
+streamlit-authenticator==0.3.3
