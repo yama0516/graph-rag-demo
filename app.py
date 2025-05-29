@@ -62,16 +62,16 @@ if query:
         st.write(query)
 
     # アシスタントのメッセージを表示
-    response = run_graph_rag(query)
+    with st.spinner("回答中...少々お待ちください..."):
+        response = run_graph_rag(query)
     with st.chat_message(ASSISTANT_NAME):
         assistant_msg = ""
-        assistant_response_area = st.empty()
+        placeholder = st.empty()
         for chunk in response:
-            if chunk is not None:
-                break
-            # 回答を逐次表示
-            assistant_msg += chunk
-            assistant_response_area.write(assistant_msg)
+            # たとえば OpenAI のチャンクなら .choices[0].delta.content でテキスト取得
+            delta = chunk.choices[0].delta.content or ""
+            assistant_msg += delta
+            placeholder.write(assistant_msg)
 
     # セッションにチャットログを追加
     st.session_state.chat_log.append({"name": USER_NAME, "msg": query})
