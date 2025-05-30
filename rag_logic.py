@@ -184,7 +184,7 @@ def run_graph_rag(query):
         client = OpenAI(api_key=OPENAI_API_KEY)
 
         response = client.chat.completions.create(
-            model="gpt-4.1",
+            model="gpt-4o",
             messages=messages,
             temperature=0,
             max_tokens=5000
