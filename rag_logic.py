@@ -109,6 +109,7 @@ def run_graph_rag(query):
 
         doc_list = [i for i in docs]
         num_list = [doc_list[i]['num'] for i in range(3)]
+        chunk_list = [(doc_list[i]['category'],doc_list[i]['title'],doc_list[i]['chunk'] ) for i in range(3)]
 
         # -------------------- Cypher --------------------
         cypher = """
@@ -150,10 +151,15 @@ def run_graph_rag(query):
             })
 
         # ---------- 最終出力（RAG 用シリアライズなど） ----------
-        graph_data = {
-            "nodes": list(nodes.values()),   # dict → list
-            "edges": edges
-        }
+        if records:
+
+            graph_data = {
+                "nodes": list(nodes.values()),   # dict → list
+                "edges": edges
+            }
+
+        else:
+            graph_data = chunk_list
 
 
         system_prompt = """
@@ -162,6 +168,9 @@ def run_graph_rag(query):
         # 制約条件
         * 与えられた{データソース}から回答し、{データソース}に記載がないことは回答しないでください。
         * {データソース}に回答に必要な情報がない場合は「与えられた情報だけでは回答できません。」と回答してください。
+        * {データソース}の{category}は以下を意味しています。
+            - memo:過去の案件のPMIの論点やナレッジが記載されているメモです。
+            - マイルストーン:一般的なPMIのマイルストーンが記載されています。
         # 出力形式
         * アドバイザリーのように可能な限りわかりやすく詳しく解説してください。
         * 回答を生成するために参照したデータソースは必ず記載してください。
