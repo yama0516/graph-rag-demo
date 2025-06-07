@@ -70,7 +70,7 @@ if auth_status:
 ###### 21.海外子会社買収後の会計領域における統合作業に関するPMI案件整理メモ
 """)
 
-    USER_NAME = "user"
+    USER_NAME = "user01"
     ASSISTANT_NAME = "AI"
 
 # チャットログを保存したセッション情報を初期化
