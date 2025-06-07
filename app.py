@@ -7,7 +7,10 @@ import streamlit_authenticator as stauth
 load_dotenv()
 
 st.set_page_config(page_title="Graph RAG Demo")
-st.title("移転価格Graph RAG")
+st.title("PMIアシスタントAI")
+st.info("""PMI関連の質問に回答してくれるアシスタントAIです。\n
+Graphデータベースとベクトルデータベースを利用したハイブリッドRAGシステムを採用しています。
+        """)
 
 hashed_pw = stauth.Hasher([os.getenv("APP_PASSWORD")]).generate()[0]
 
@@ -39,9 +42,34 @@ name, auth_status, username = authenticator.login(location='main')
 
 # 認証結果に応じてアプリの表示を切り替える
 if auth_status:
+    st.sidebar.write("ユーザー：user01")
     authenticator.logout(location='sidebar')
-    st.write(f"ようこそ、ユーザーさん！")
-    st.success("ログインに成功しました。")
+    st.sidebar.divider()
+    st.sidebar.markdown("""
+### 学習済みの案件メモ一覧
+###### 1.PMIマイルストーンリスト（会計、IT、人事、法務）
+###### 2.国内物流企業によるIT関連子会社の買収に伴うクロスファンクショナルPMI整理メモ
+###### 3.海外M&Aによる製造子会社の買収に伴うPMI実務整理メモ
+###### 4.欧州拠点の製薬企業買収に伴うPMI論点整理メモ（機能別課題と実行上の示唆）
+###### 5.北米医療機器メーカー買収に伴う統合実務に関するPMI案件整理メモ
+###### 6.国内製造業による異業種ベンチャー買収におけるPMI論点整理メモ
+###### 7.中堅エネルギー商社による再生可能エネルギー事業会社買収に関するPMI案件
+###### 8.国内ITサービス企業による地方金融機関向けソリューション会社の買収におけるPMI
+###### 9.日系商社による物流スタートアップ買収に関するPMI案件
+###### 10.製造業による同業統合における会計・業務・管理体制のPMI
+###### 11.欧州BPO企業買収に伴う機能別統合マネジメントの実務整理メモ
+###### 12.北米子会社統合に伴う論点整理
+###### 13.欧州製造業買収後におけるグループ内制度整備と早期安定化に関する論点整理
+###### 14.グローバル製造業の買収後Day360フェーズにおける制度統合とシナジー実現のための論点整理
+###### 15.国内物流業界の買収案件における初期PMIフェーズにおける制度整備と関係構築の論点整理
+###### 16.業務プロセスとシステム基盤の融合を軸としたPMI実行案件整理メモ
+###### 17.データ・制度・人材の融合を軸とした中堅IT企業の統合案件整理
+###### 18.大手製薬企業によるバイオベンチャー買収後の管理基盤統合に向けたPMI対応
+###### 19.国内大手製造業による中堅IT企業買収後のリスク統合・人材強化を重視したPMI推進
+###### 20.欧州ITインフラ企業の買収に伴うPMI計画に関する論点整理
+###### 21.海外子会社買収後の会計領域における統合作業に関するPMI案件整理メモ
+""")
+
     USER_NAME = "user"
     ASSISTANT_NAME = "AI"
 
@@ -62,7 +90,7 @@ if query:
         st.write(query)
 
     # アシスタントのメッセージを表示
-    with st.spinner("回答中...少々お待ちください..."):
+    with st.spinner("回答生成中...少々お待ちください..."):
         response = run_graph_rag(query)
     with st.chat_message(ASSISTANT_NAME):
         assistant_msg = ""

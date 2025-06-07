@@ -75,18 +75,32 @@ driver = GraphDatabase.driver(NEO4J_URI, auth=('neo4j', NEO4J_PASSWORD))
 
 credential = AzureKeyCredential(AZURE_AI_SEARCH_API_KEY)
 
-client = AzureOpenAI(
-  api_key = AZURE_OPENAI_API_KEY,  
-  api_version = "2024-02-01",
-  azure_endpoint = AZURE_OPENAI_ENDPOINT
-)
+client = OpenAI(api_key=OPENAI_API_KEY)
 
 @retry(wait=wait_random_exponential(min=1, max=20), stop=stop_after_attempt(6))
 # タイトルフィールドとコンテンツフィールドのEmbeddingsを生成する関数。
 def generate_embeddings(text, model=model):
     return client.embeddings.create(input = [text], model=model).data[0].embedding
 
+def generate_search_query(user_question: str) -> str:
+    system_prompt = """
+    
+    以下のユーザーの質問を、ドキュメント検索に適したキーワードに変換してください。無駄な語句を除き、簡潔にしてください。
+    
+    """
 
+    messages = [
+        {"role": "system", "content": system_prompt},
+        {"role": "user", "content": user_question}
+    ]
+
+    response = client.chat.completions.create(
+        model="gpt-4o",
+        messages=messages,
+        temperature=0,
+    )
+
+    return response.choices[0].message.content.strip()
 
 # client = GraphCypherQAChain.from_llm(graph=graph, llm=llm, verbose=True, allow_dangerous_requests=True) 
 
@@ -97,7 +111,7 @@ def run_graph_rag(query):
         vector_query = VectorizedQuery(vector=generate_embeddings(query), k_nearest_neighbors=50, fields="text_vector")
 
         docs = search_client.search(
-        search_text=query,
+        search_text=generate_search_query(query),
         vector_queries= [vector_query],
         select=["title", "num", "category", "chunk"],
         query_type=QueryType.SEMANTIC, 
@@ -163,19 +177,27 @@ def run_graph_rag(query):
 
 
         system_prompt = """
-        # 役割
-        あなたは移転価格税制を専門とするアシスタントAIです。ーザーから質問に対してステップバイステップで考えて回答してください。
-        # 制約条件
-        * 与えられた{データソース}から回答し、{データソース}に記載がないことは回答しないでください。
-        * {データソース}に回答に必要な情報がない場合は「与えられた情報だけでは回答できません。」と回答してください。
-        * {データソース}の{category}は以下を意味しています。
-            - memo:過去の案件のPMIの論点やナレッジが記載されているメモです。
-            - マイルストーン:一般的なPMIのマイルストーンが記載されています。
-        # 出力形式
-        * アドバイザリーのように可能な限りわかりやすく詳しく解説してください。
-        * 回答を生成するために参照したデータソースは必ず記載してください。
-        * "num"等のデータ管理用のメタデータは回答に含めないでください。
-        """
+# 役割
+あなたはPost Merger Integrationを専門とするアシスタントAIです。ユーザーから質問に対してステップバイステップで考えて回答してください。
+
+# 制約条件
+  * 与えられた{データソース}から回答し、{データソース}に記載がないことは回答しないでください。
+  * {データソース}に回答に必要な情報がない場合は「与えられた情報だけでは回答できません。」と回答してください。
+  * {データソース}の{category}は以下を意味しています。
+    - memo:過去の案件のPMIの論点やナレッジが記載されているメモです。
+    - マイルストーン:一般的なPMIのマイルストーンが記載されています。
+
+# 出力形式
+  * アドバイザリーのように可能な限り詳しく解説してください。
+  * 回答を生成するために参照したデータソースは以下の形式で必ず記載してください。
+    
+    【参照メモ】
+        - {name}
+        - {name}
+        - {name}
+        
+  * "num"等のデータ管理用のメタデータは回答に含めないでください。
+"""
 
         messages = [{'role': 'system', 'content': system_prompt}]
 
