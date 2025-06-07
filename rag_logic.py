@@ -103,27 +103,54 @@ def generate_search_query(user_question: str) -> str:
     return response.choices[0].message.content.strip()
 
 # client = GraphCypherQAChain.from_llm(graph=graph, llm=llm, verbose=True, allow_dangerous_requests=True) 
+def search_text(query,category):
+  search_client = SearchClient(AZURE_AI_SEARCH_ENDPOINT, index_name, credential=credential)
+  vector_query = VectorizedQuery(vector=generate_embeddings(query), k_nearest_neighbors=50, fields="text_vector")
+
+  docs = search_client.search(
+      search_text=generate_search_query(query),
+      vector_queries= [vector_query],
+      select=["title", "num", "category", "chunk"],
+      filter=f"category eq '{category}'",
+      query_type=QueryType.SEMANTIC, 
+      semantic_configuration_name='default', 
+      query_caption=QueryCaptionType.EXTRACTIVE, 
+      query_answer=QueryAnswerType.EXTRACTIVE,
+      top=5
+  )
+
+
+  doc_list = [i for i in docs]
+  return doc_list
+
 
 def run_graph_rag(query):
 
     try:
-        search_client = SearchClient(AZURE_AI_SEARCH_ENDPOINT, index_name, credential=credential)
-        vector_query = VectorizedQuery(vector=generate_embeddings(query), k_nearest_neighbors=50, fields="text_vector")
+        # search_client = SearchClient(AZURE_AI_SEARCH_ENDPOINT, index_name, credential=credential)
+        # vector_query = VectorizedQuery(vector=generate_embeddings(query), k_nearest_neighbors=50, fields="text_vector")
 
-        docs = search_client.search(
-        search_text=generate_search_query(query),
-        vector_queries= [vector_query],
-        select=["title", "num", "category", "chunk"],
-        query_type=QueryType.SEMANTIC, 
-        semantic_configuration_name='default', 
-        query_caption=QueryCaptionType.EXTRACTIVE, 
-        query_answer=QueryAnswerType.EXTRACTIVE,
-        top=3
-        )
+        # docs = search_client.search(
+        # search_text=generate_search_query(query),
+        # vector_queries= [vector_query],
+        # select=["title", "num", "category", "chunk"],
+        # query_type=QueryType.SEMANTIC, 
+        # semantic_configuration_name='default', 
+        # query_caption=QueryCaptionType.EXTRACTIVE, 
+        # query_answer=QueryAnswerType.EXTRACTIVE,
+        # top=3
+        # )
 
-        doc_list = [i for i in docs]
-        num_list = [doc_list[i]['num'] for i in range(3)]
-        chunk_list = [(doc_list[i]['category'],doc_list[i]['title'],doc_list[i]['chunk'] ) for i in range(3)]
+        # doc_list = [i for i in docs]
+        # num_list = [doc_list[i]['num'] for i in range(3)]
+        # chunk_list = [(doc_list[i]['category'],doc_list[i]['title'],doc_list[i]['chunk'] ) for i in range(3)]
+
+        doc_memo = search_text(query,"memo")
+        doc_milestone = search_text(query,"マイルストーン")
+
+        num_list = [doc_memo[i]['num'] for i in range(3)] + [doc_milestone[i]['num'] for i in range(3)]
+        chunk_list = [("category : " + doc_memo[i]['category'],"name : " + doc_memo[i]['title'],doc_memo[i]['chunk'] ) for i in range(3)] +[("category : " + doc_milestone[i]['category'],"name : " + doc_milestone[i]['title'],doc_milestone[i]['chunk'] ) for i in range(3)]
+
 
         # -------------------- Cypher --------------------
         cypher = """
@@ -178,7 +205,7 @@ def run_graph_rag(query):
 
         system_prompt = """
 # 役割
-あなたはPost Merger Integrationを専門とするアシスタントAIです。ユーザーから質問に対してステップバイステップで考えて回答してください。
+あなたはPost Merger Integrationを専門とするアシスタントAIです。ユーザーから質問に対して、与えられた{データソース}からステップバイステップで考えて回答してください。
 
 # 制約条件
   * 与えられた{データソース}から回答し、{データソース}に記載がないことは回答しないでください。
@@ -189,7 +216,7 @@ def run_graph_rag(query):
 
 # 出力形式
   * アドバイザリーのように可能な限り詳しく解説してください。
-  * 回答を生成するために参照したデータソースは以下の形式で必ず記載してください。
+  * 回答を生成するために参照したデータソースは、回答の文末に以下の形式で必ず記載してください。
     
     【参照メモ】
         - {name}
