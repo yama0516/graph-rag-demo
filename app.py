@@ -8,21 +8,6 @@ load_dotenv()
 
 st.set_page_config(page_title="Graph RAG Demo")
 
-st.markdown(
-    """
-    <style>
-    body {
-        background-color: white !important;
-    }
-    .stApp {
-        background-color: white !important;
-    }
-    </style>
-    """,
-    unsafe_allow_html=True
-)
-
-
 st.info("""### PMIアシスタントAI
          - PMI関連の質問に回答してくれるアシスタントAIです
     - Graphデータベースとベクトルデータベースを利用したハイブリッドRAGシステムを採用しています。
