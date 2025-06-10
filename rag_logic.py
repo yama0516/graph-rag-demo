@@ -148,8 +148,8 @@ def run_graph_rag(query):
         doc_memo = search_text(query,"memo")
         doc_milestone = search_text(query,"マイルストーン")
 
-        num_list = [doc_memo[i]['num'] for i in range(3)] + [doc_milestone[i]['num'] for i in range(3)]
-        chunk_list = [("category : " + doc_memo[i]['category'],"name : " + doc_memo[i]['title'],doc_memo[i]['chunk'] ) for i in range(3)] +[("category : " + doc_milestone[i]['category'],"name : " + doc_milestone[i]['title'],doc_milestone[i]['chunk'] ) for i in range(3)]
+        num_list = [doc_memo[i]['num'] for i in range(5)] + [doc_milestone[i]['num'] for i in range(5)]
+        chunk_list = [("category : " + doc_memo[i]['category'],"name : " + doc_memo[i]['title'],doc_memo[i]['chunk'] ) for i in range(5)] +[("category : " + doc_milestone[i]['category'],"name : " + doc_milestone[i]['title'],doc_milestone[i]['chunk'] ) for i in range(5)]
 
 
         # -------------------- Cypher --------------------
@@ -205,25 +205,30 @@ def run_graph_rag(query):
 
         system_prompt = """
 # 役割
-あなたはPost Merger Integrationを専門とするアシスタントAIです。ユーザーから質問に対して、与えられた{データソース}からステップバイステップで考えて回答してください。
+あなたはPost Merger Integrationを専門とするコンサルタントです。
+
+# 指示
+ユーザーから質問に対して、与えられた{データソース}および一般的なベストプラクティスからステップバイステップで考えて回答してください。
 
 # 制約条件
-  * 与えられた{データソース}から回答し、{データソース}に記載がないことは回答しないでください。
-  * {データソース}に回答に必要な情報がない場合は「与えられた情報だけでは回答できません。」と回答してください。
+  * 参照元として、{データソース}と一般的なベストプラクティスのどちらを使用したか明示してください。
+  * 両者の内容に矛盾がある場合は、{データソース}を優先してください。
   * {データソース}の{category}は以下を意味しています。
-    - memo:過去の案件のPMIの論点やナレッジが記載されているメモです。
-    - マイルストーン:一般的なPMIのマイルストーンが記載されています。
+    - memo: 過去の案件のPMIの論点やナレッジが記載されたメモです。
+    - マイルストーン: 一般的なPMIのマイルストーンが記載されています。過去案件のナレッジではありません。
+  * 一般的なベストプラクティスとは、PMIに関する公開文献、専門家の知見、業界標準を指します。
 
 # 出力形式
   * アドバイザリーのように可能な限り詳しく解説してください。
-  * 回答を生成するために参照したデータソースは、回答の文末に以下の形式で必ず記載してください。
+  * 番号（num）は回答に含めないでください。
+  * 番号（num）だけの記載は避け、ユーザーが内容を理解できるタイトルを出力してください。
+  * 必ず回答の一番最後に以下の形式で、参照したデータソースの「タイトル（name）」を必ず記載してください。
     
     【参照メモ】
-        - {name}
-        - {name}
-        - {name}
-        
-  * "num"等のデータ管理用のメタデータは回答に含めないでください。
+        - {node['name']}
+        - {node['name']}
+        - {node['name']}
+  * 回答はマークダウン形式で必要に応じて表などを仕様してわかりやすく回答してください。
 """
 
         messages = [{'role': 'system', 'content': system_prompt}]

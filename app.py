@@ -12,10 +12,10 @@ st.info("""### PMIアシスタントAI
          - PMI関連の質問に回答してくれるアシスタントAIです
     - Graphデータベースとベクトルデータベースを利用したハイブリッドRAGシステムを採用しています。
     - 使い方/質問例
-        ✓ 買収先はIFRS、自社は日本基準を採用しています。連結処理や管理会計の観点から、
-         　どのように会計基準の統一を進めればよいでしょうか？
+        ✓ 製造業のPMIを計画しています。過去の案件から検討すべき論点を教えてください。
         ✓ 買収先のITセキュリティポリシーが極めて緩く、ウイルス検知やID管理が不十分です。
          　Day30までに講じるべき最低限の対策は何ですか？
+        ✓ 会計ポリシーの統一に関して、過去の案件及び論点を全て教えてください。
         ✓ ITセキュリティ体制が買収先に存在しない場合、PMIで最初に実施すべきステップは？""")
 st.warning("""
 ###### ※参照している書類は、全て生成AIで作成した架空の資料・案件メモです。
@@ -30,10 +30,15 @@ config = {
     "credentials": {
         "usernames": {
             os.getenv("APP_USER"): {
-                "name" : "time",
+                "name" : "user",
                 "password": hashed_pw,
                 # "roles": ["admin"],
-            }
+            },
+            os.getenv("APP_USER2"): {
+                "name" : "rag",
+                "password": hashed_pw,
+                # "roles": ["admin"],
+            },
         }
     },
     "cookie": {
@@ -54,7 +59,7 @@ name, auth_status, username = authenticator.login(location='main')
 
 # 認証結果に応じてアプリの表示を切り替える
 if auth_status:
-    st.sidebar.write("ユーザー：user01")
+    st.sidebar.write(f"ユーザー：{username}")
     authenticator.logout(location='sidebar')
     st.sidebar.divider()
     st.sidebar.markdown("""
@@ -92,8 +97,8 @@ if auth_status:
 ###### 31.シグナス物流によるグローバル倉庫運営会社の買収案件整理メモ
                                                 """)
 
-    USER_NAME = "user01"
-    ASSISTANT_NAME = "AI"
+    # USER_NAME = "user01"
+    # ASSISTANT_NAME = "AI"
 
 # チャットログを保存したセッション情報を初期化
 if "chat_log" not in st.session_state:
@@ -108,13 +113,13 @@ if query:
             st.write(chat["msg"])
 
     # 最新のメッセージを表示
-    with st.chat_message(USER_NAME):
+    with st.chat_message("user"):
         st.write(query)
 
     # アシスタントのメッセージを表示
     with st.spinner("回答生成中...少々お待ちください..."):
         response = run_graph_rag(query)
-    with st.chat_message(ASSISTANT_NAME):
+    with st.chat_message("AI"):
         assistant_msg = ""
         placeholder = st.empty()
         for chunk in response:
@@ -124,8 +129,8 @@ if query:
             placeholder.write(assistant_msg)
 
     # セッションにチャットログを追加
-    st.session_state.chat_log.append({"name": USER_NAME, "msg": query})
-    st.session_state.chat_log.append({"name": ASSISTANT_NAME, "msg": assistant_msg})
+    st.session_state.chat_log.append({"name": "user", "msg": query})
+    st.session_state.chat_log.append({"name": "AI", "msg": assistant_msg})
     # ← ここに本体のアプリ処理を書く
 elif auth_status is False:
     st.error("ユーザー名またはパスワードが間違っています。")
