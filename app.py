@@ -8,18 +8,7 @@ load_dotenv()
 
 st.set_page_config(page_title="Graph RAG Demo")
 
-st.info("""### PMIアシスタントAI
-         - PMI関連の質問に回答してくれるアシスタントAIです
-    - Graphデータベースとベクトルデータベースを利用したハイブリッドRAGシステムを採用しています。
-    - 使い方/質問例
-        ✓ 製造業のPMIを計画しています。過去の案件から検討すべき論点を教えてください。
-        ✓ 買収先のITセキュリティポリシーが極めて緩く、ウイルス検知やID管理が不十分です。
-         　Day30までに講じるべき最低限の対策は何ですか？
-        ✓ 会計ポリシーの統一に関して、過去の案件及び論点を全て教えてください。
-        ✓ ITセキュリティ体制が買収先に存在しない場合、PMIで最初に実施すべきステップは？""")
-st.warning("""
-###### ※参照している書類は、全て生成AIで作成した架空の資料・案件メモです。
-""")
+
 # st.write("""###### PMI関連の質問に回答してくれるアシスタントAIです。\n
 # ###### Graphデータベースとベクトルデータベースを利用したハイブリッドRAGシステムを採用しています。
 #         """)
@@ -55,10 +44,22 @@ authenticator = stauth.Authenticate(config["credentials"],
 
 
 # ログインフォームの表示（ここで入力欄が出る）
-name, auth_status, username = authenticator.login(location='main')
+name, auth_status, username = authenticator.login(location='main', fields={'Form name': 'PMIアシスタントAI\nログイン画面','Login': 'ログイン'})
 
 # 認証結果に応じてアプリの表示を切り替える
 if auth_status:
+    st.info("""### PMIアシスタントAI
+         - PMI関連の質問に回答してくれるアシスタントAIです
+    - Graphデータベースとベクトルデータベースを利用したハイブリッドRAGシステムを採用しています。
+    - 使い方/質問例
+        ✓ 製造業のPMIを計画しています。過去の案件から検討すべき論点を教えてください。
+        ✓ 買収先のITセキュリティポリシーが極めて緩く、ウイルス検知やID管理が不十分です。
+         　Day30までに講じるべき最低限の対策は何ですか？
+        ✓ 会計ポリシーの統一に関して、過去の案件及び論点を全て教えてください。
+        ✓ ITセキュリティ体制が買収先に存在しない場合、PMIで最初に実施すべきステップは？""")
+    st.warning("""
+###### ※参照している書類は、全て生成AIで作成した架空の資料・案件メモです。
+""")
     st.sidebar.write(f"ユーザー：{username}")
     authenticator.logout(location='sidebar')
     st.sidebar.divider()
