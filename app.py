@@ -101,37 +101,37 @@ if auth_status:
     # USER_NAME = "user01"
     # ASSISTANT_NAME = "AI"
 
-# チャットログを保存したセッション情報を初期化
-if "chat_log" not in st.session_state:
-    st.session_state.chat_log = []
+    # チャットログを保存したセッション情報を初期化
+    if "chat_log" not in st.session_state:
+        st.session_state.chat_log = []
 
 
-query = st.chat_input("ここにメッセージを入力")
-if query:
-    # 以前のチャットログを表示
-    for chat in st.session_state.chat_log:
-        with st.chat_message(chat["name"]):
-            st.write(chat["msg"])
+    query = st.chat_input("ここにメッセージを入力")
+    if query:
+        # 以前のチャットログを表示
+        for chat in st.session_state.chat_log:
+            with st.chat_message(chat["name"]):
+                st.write(chat["msg"])
 
-    # 最新のメッセージを表示
-    with st.chat_message("user"):
-        st.write(query)
+        # 最新のメッセージを表示
+        with st.chat_message("user"):
+            st.write(query)
 
-    # アシスタントのメッセージを表示
-    with st.spinner("回答生成中...少々お待ちください..."):
-        response = run_graph_rag(query)
-    with st.chat_message("AI"):
-        assistant_msg = ""
-        placeholder = st.empty()
-        for chunk in response:
-            # たとえば OpenAI のチャンクなら .choices[0].delta.content でテキスト取得
-            delta = chunk
-            assistant_msg += delta
-            placeholder.write(assistant_msg)
+        # アシスタントのメッセージを表示
+        with st.spinner("回答生成中...少々お待ちください..."):
+            response = run_graph_rag(query)
+        with st.chat_message("AI"):
+            assistant_msg = ""
+            placeholder = st.empty()
+            for chunk in response:
+                # たとえば OpenAI のチャンクなら .choices[0].delta.content でテキスト取得
+                delta = chunk
+                assistant_msg += delta
+                placeholder.write(assistant_msg)
 
-    # セッションにチャットログを追加
-    st.session_state.chat_log.append({"name": "user", "msg": query})
-    st.session_state.chat_log.append({"name": "AI", "msg": assistant_msg})
+        # セッションにチャットログを追加
+        st.session_state.chat_log.append({"name": "user", "msg": query})
+        st.session_state.chat_log.append({"name": "AI", "msg": assistant_msg})
     # ← ここに本体のアプリ処理を書く
 elif auth_status is False:
     st.error("ユーザー名またはパスワードが間違っています。")
