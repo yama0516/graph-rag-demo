@@ -7,6 +7,7 @@ import streamlit as st
 import os
 from dotenv import load_dotenv
 import streamlit_authenticator as stauth
+from streamlit_authenticator.utilities.hasher import Hasher
 
 st.set_page_config(page_title="multi_agent")
 
@@ -15,7 +16,10 @@ st.set_page_config(page_title="multi_agent")
 # ###### Graphデータベースとベクトルデータベースを利用したハイブリッドRAGシステムを採用しています。
 #         """)
 
-hashed_pw = stauth.Hasher([os.getenv("APP_PASSWORD")]).generate()[0]
+# hashed_pw = stauth.Hasher([os.getenv("APP_PASSWORD")]).generate()[0]
+plain = os.getenv("APP_PASSWORD", "")
+hashed_pw = Hasher.hash(plain)
+
 
 config = {
     "credentials": {
