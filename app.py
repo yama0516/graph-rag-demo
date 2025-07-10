@@ -1,12 +1,14 @@
+
+# v2.0
+# app.py
 import streamlit as st
-from rag_logic import run_graph_rag  # ロジックをインポート
+from multi_agent import(run_sync,chat_with_gpt)
+import streamlit as st
 import os
 from dotenv import load_dotenv
 import streamlit_authenticator as stauth
 
-load_dotenv()
-
-st.set_page_config(page_title="Graph RAG Demo")
+st.set_page_config(page_title="multi_agent")
 
 
 # st.write("""###### PMI関連の質問に回答してくれるアシスタントAIです。\n
@@ -98,41 +100,88 @@ if auth_status:
 ###### 31.シグナス物流によるグローバル倉庫運営会社の買収案件整理メモ
                                                 """)
 
-    # USER_NAME = "user01"
-    # ASSISTANT_NAME = "AI"
-
-    # チャットログを保存したセッション情報を初期化
-    if "chat_log" not in st.session_state:
-        st.session_state.chat_log = []
 
 
-    query = st.chat_input("ここにメッセージを入力")
-    if query:
-        # 以前のチャットログを表示
-        for chat in st.session_state.chat_log:
-            with st.chat_message(chat["name"]):
-                st.write(chat["msg"])
 
-        # 最新のメッセージを表示
+
+
+
+
+# st.set_page_config(page_title="AutoGen 議論チャット", layout="centered")
+# st.title("🤖 AIエージェントと議論しよう")
+
+
+
+
+
+
+    # ——— セッションの初期化 ———
+    if "qa_history" not in st.session_state:
+        # 各質問ごとに { "question": str, "responses": list[(sender,content)] } を保存
+        st.session_state.qa_history = []
+
+    # ——— これまでの QA ペアを表示 ———
+    for entry in st.session_state.qa_history:
+        # ユーザー質問
         with st.chat_message("user"):
-            st.write(query)
+            st.markdown(entry["question"])
+        # 対応するエージェント応答を折りたたみ表示
+        with st.expander("エージェントの発言", expanded=False):
+            for sender, msg in entry["responses"]:
+                st.markdown(f"**{sender}**: {msg}")
+        with st.chat_message("assistant"):
+            st.markdown(entry["answer"])
 
-        # アシスタントのメッセージを表示
-        with st.spinner("回答生成中...少々お待ちください..."):
-            response = run_graph_rag(query)
-        with st.chat_message("AI"):
-            assistant_msg = ""
-            placeholder = st.empty()
-            for chunk in response:
-                # たとえば OpenAI のチャンクなら .choices[0].delta.content でテキスト取得
-                delta = chunk
-                assistant_msg += delta
-                placeholder.write(assistant_msg)
+    # ユーザー入力
+    user_input = st.chat_input("💬 議論したい内容を入力してください")
 
-        # セッションにチャットログを追加
-        st.session_state.chat_log.append({"name": "user", "msg": query})
-        st.session_state.chat_log.append({"name": "AI", "msg": assistant_msg})
-    # ← ここに本体のアプリ処理を書く
+    if user_input:
+        # ユーザー発言を記録＆表示
+        st.session_state.qa_history.append({
+            "question": user_input,
+            "responses": [],
+            "answer":[]
+        })
+        with st.chat_message("user"):
+            st.markdown(user_input)
+
+        # “現在発言中のエージェント” を差し替えるプレースホルダー
+        placeholder = st.empty()
+
+        with st.spinner("エージェントたちが議論しています..."):
+            temp_logs = []
+            def handle_message(sender: str, content: str):
+                st.session_state.qa_history[-1]["responses"].append((sender, content))
+                temp_logs.append((sender, content))
+                # 前の発言をクリアして、新しい発言だけ表示
+                placeholder.empty()
+                # 1) 最初の3行だけ抜き出してプレビュー
+                lines = content.splitlines()
+                preview = lines[:5]
+                if len(lines) > 5:
+                    preview.append("・・・・・")
+
+                # 2) 発言者名とプレビューを結合
+                preview_text = "\n".join(preview)
+                full_preview = f"{sender}: {preview_text}"
+
+                # 3) 各行をブロック引用に
+                quoted = "\n".join(f"> {line}" for line in full_preview.splitlines())
+
+                placeholder.markdown(quoted)
+
+            run_sync(user_input, handle_message)
+            final_answer = chat_with_gpt(user_input,temp_logs)
+
+        with st.expander("エージェントの発言",expanded=False):
+            placeholder.empty()
+            for role, message in temp_logs:
+                st.markdown(f"**{role}**: {message}")
+        with st.chat_message("assistant"):
+            st.markdown(final_answer)
+
+        st.session_state.qa_history[-1]["answer"].append((final_answer))
+
 elif auth_status is False:
     st.error("ユーザー名またはパスワードが間違っています。")
 elif auth_status is None:
