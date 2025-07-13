@@ -146,7 +146,6 @@ def chat_with_gpt(user_input: str, agent_input: list[tuple[str,str]]):
         model="o3",        
         messages=messages,
         # 以下オプション（必要に応じて調整）
-        temperature=0,       # ランダム性の制御（0.0〜1.0）
         # max_tokens=5000,        # 出力トークン数の上限
         max_completion_tokens=5000
     )
