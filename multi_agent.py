@@ -11,6 +11,7 @@ import openai
 
 load_dotenv()
 OPENAI_API_KEY = os.getenv('OPENAI_API_KEY')
+openai.api_type = "openai"
 model = "gpt-4o"
 
 def run_sync(task: str, on_message: Callable[[str, str], None]) -> None:
