@@ -49,7 +49,11 @@ authenticator = stauth.Authenticate(config["credentials"],
 
 
 # ログインフォームの表示（ここで入力欄が出る）
-name, auth_status, username = authenticator.login(location='main', fields={'Form name': 'マルチエージェントAI\nログイン画面','Login': 'ログイン'})
+name, auth_status, username = authenticator.login(
+    "マルチエージェントAI\nログイン画面",  # form_name
+    "ログイン",                            # login_button_name
+    location="main"
+)
 
 # 認証結果に応じてアプリの表示を切り替える
 if auth_status:
