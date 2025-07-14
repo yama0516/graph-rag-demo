@@ -3,12 +3,11 @@
 # app.py
 import streamlit as st
 from multi_agent import(run_sync,chat_with_gpt)
-import streamlit as st
 import os
 from dotenv import load_dotenv
 import streamlit_authenticator as stauth
 from streamlit_authenticator.utilities.hasher import Hasher
-
+load_dotenv()
 st.set_page_config(page_title="multi_agent")
 
 
