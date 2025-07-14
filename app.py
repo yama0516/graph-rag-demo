@@ -48,8 +48,21 @@ authenticator = stauth.Authenticate(config["credentials"],
                                     cookie_expiry_days=config["cookie"]["expiry_days"])
 
 
-# ログインフォームの表示（ここで入力欄が出る）
-name, auth_status, username = authenticator.login(location='main', fields={'Form name': 'マルチエージェントAI\nログイン画面','Login': 'ログイン'})
+
+# ---------- ログインフォームを描画（戻り値は使わない） ----------
+authenticator.login(
+    location="main",
+    fields={
+        "Form name": "マルチエージェントAI\nログイン画面",
+        "Username":  "ユーザー名",
+        "Password":  "パスワード",
+        "Login":     "ログイン",
+    },
+)
+
+# ---------- 認証結果をセッションステートから取得 ----------
+auth_status = st.session_state.get("authentication_status")
+username    = st.session_state.get("name")   
 
 # 認証結果に応じてアプリの表示を切り替える
 if auth_status:
